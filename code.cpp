@@ -30,6 +30,53 @@ namespace std {
         }
     };
 }
+int dfs_count=0,bfs_count=0,a_count=0;
+int dfs_duration=0,bfs_duration=0,a_duration=0,maze_creation_duration=0;
+unordered_set<pair<pair<int,int>,pair<int,int>>> dfs_path(unordered_set<pair<pair<int,int>,pair<int,int>>> maze,int n){
+    vector<vector<bool>> visited(n,vector<bool>(n,false));
+    vector<vector<pair<int,int>>> parent(n,vector<pair<int,int>>(n,{-1,-1}));
+    vector<pair<int,int>> st;
+    st.push_back({0,0});
+    visited[0][0]=true;
+    while(!st.empty()){
+        pair<int,int> p = st.back();
+        st.pop_back();
+        int i = p.first,j = p.second;
+        // cout<<i<<" "<<j<<endl;
+        visited[i][j]=true;
+        dfs_count++;
+        if(p==make_pair(n-1,n-1)) break;
+        if(i<n-1 && maze.find({{i+1,j},{i+1,j+1}})==maze.end() && !visited[i+1][j]){
+            st.push_back({i+1,j});
+            parent[i+1][j]={i,j};
+        }
+        if(i>0 && maze.find({{i,j},{i,j+1}})==maze.end() && !visited[i-1][j]){
+            st.push_back({i-1,j});
+            parent[i-1][j]={i,j};
+        }
+        if(j<n-1 && maze.find({{i,j+1},{i+1,j+1}})==maze.end() && !visited[i][j+1]){
+            st.push_back({i,j+1});
+            parent[i][j+1]={i,j};
+        }
+        if(j>0 && maze.find({{i,j},{i+1,j}})==maze.end() && !visited[i][j-1]){
+            st.push_back({i,j-1});
+            parent[i][j-1]={i,j};
+        }
+    }
+    pair<int,int> end = {n-1,n-1};
+    unordered_set<pair<pair<int,int>,pair<int,int>>> path;
+    while(parent[end.first][end.second]!=make_pair(-1,-1)){
+        pair<int,int> a = parent[end.first][end.second];
+        if(end.first==a.first+1||end.second==a.second+1){
+            path.insert({a,end});
+        }
+        else{
+            path.insert({end,a});
+        }
+        end = a;
+    }
+    return path;
+}
 // struct change{
 //     int n;
 //     change(int n): n(n) {}
@@ -104,6 +151,51 @@ unordered_set<pair<pair<int,int>,pair<int,int>>> a_path(unordered_set<pair<pair<
     }
     return path;
 }
+unordered_set<pair<pair<int,int>,pair<int,int>>> bfs_path(unordered_set<pair<pair<int,int>,pair<int,int>>> maze,int n){
+    vector<vector<bool>> visited(n,vector<bool>(n,false));
+    vector<vector<pair<int,int>>> parent(n,vector<pair<int,int>>(n,{-1,-1}));
+    queue<pair<int,int>> q;
+    q.push({0,0});
+    visited[0][0]=true;
+    while(!q.empty()){
+        pair<int,int> p = q.front();
+        q.pop();
+        int i = p.first,j = p.second;
+        // cout<<i<<" "<<j<<endl;
+        visited[i][j] = true;
+        bfs_count++;
+        if(p==make_pair(n-1,n-1)) break;
+        if(i<n-1 && maze.find({{i+1,j},{i+1,j+1}})==maze.end() && !visited[i+1][j]){
+            q.push({i+1,j});
+            parent[i+1][j]={i,j};
+        }
+        if(i>0 && maze.find({{i,j},{i,j+1}})==maze.end() && !visited[i-1][j]){
+            q.push({i-1,j});
+            parent[i-1][j]={i,j};
+        }
+        if(j<n-1 && maze.find({{i,j+1},{i+1,j+1}})==maze.end() && !visited[i][j+1]){
+            q.push({i,j+1});
+            parent[i][j+1]={i,j};
+        }
+        if(j>0 && maze.find({{i,j},{i+1,j}})==maze.end() && !visited[i][j-1]){
+            q.push({i,j-1});
+            parent[i][j-1]={i,j};
+        }
+    }
+    pair<int,int> end = {n-1,n-1};
+    unordered_set<pair<pair<int,int>,pair<int,int>>> path;
+    while(parent[end.first][end.second]!=make_pair(-1,-1)){
+        pair<int,int> a = parent[end.first][end.second];
+        if(a.first==end.first+1 || a.second==end.second+1){
+            path.insert({end,a});
+        }
+        else{
+            path.insert({a,end});
+        }
+        end = a;
+    }
+    return path;
+}
 int main(){
     int n;
     cout<<"Enter the dimension of the maze(nxn): ";
@@ -152,5 +244,106 @@ int main(){
             }
         }
     }
+    auto stop = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::microseconds>(stop-start);
+    maze_creation_duration = duration.count();
+    
+    cout<<"\n\nrandomly generated maze: \n\n";
+    display_maze(maze,n);
+
+    cout<<"\n\n\ndfs path for the maze:\n\n";
+    start = chrono::high_resolution_clock::now();
+    unordered_set<pair<pair<int,int>,pair<int,int>>> dfs_ans = dfs_path(maze,n);
+    stop = chrono::high_resolution_clock::now();
+    duration = chrono::duration_cast<chrono::microseconds>(stop-start);
+    dfs_duration = duration.count();
+    display(maze,dfs_ans,n);
+
+    cout<<"\n\n\nbfs path for the maze:\n\n";
+    start = chrono::high_resolution_clock::now();
+    unordered_set<pair<pair<int,int>,pair<int,int>>> bfs_ans = bfs_path(maze,n);
+    stop = chrono::high_resolution_clock::now();
+    duration = chrono::duration_cast<chrono::microseconds>(stop-start);
+    bfs_duration = duration.count();
+    display(maze,bfs_ans,n);
+
+    cout<<"\n\n\na* path for the maze:\n\n";
+    start = chrono::high_resolution_clock::now();
+    unordered_set<pair<pair<int,int>,pair<int,int>>> a_ans = a_path(maze,n);
+    stop = chrono::high_resolution_clock::now();
+    duration = chrono::duration_cast<chrono::microseconds>(stop-start);
+    a_duration = duration.count();
+    display(maze,bfs_ans,n);
+
+    cout<<endl<<endl;
+    cout<<"The steps taken for completion of dfs_path: "<<dfs_count<<endl;
+    cout<<"The steps taken for completion of bfs_path: "<<bfs_count<<endl;
+    cout<<"The steps taken for completion of a*_path: "<<a_count<<endl<<endl;
+
+    cout<<"The order of the number of steps taken: ";
+    if(dfs_count<bfs_count && dfs_count<a_count){
+        cout<<"dfs < ";
+        if(bfs_count<a_count){
+            cout<<"bfs < a*";
+        }
+        else{
+            cout<<"a* < bfs";
+        }
+    }
+    if(bfs_count<dfs_count && bfs_count<a_count){
+        cout<<"bfs < ";
+        if(dfs_count<a_count){
+            cout<<"dfs < a*";
+        }
+        else{
+            cout<<"a* < dfs";
+        }
+    }
+    if(a_count<bfs_count && a_count<dfs_count){
+        cout<<"a* < ";
+        if(bfs_count<dfs_count){
+            cout<<"bfs < dfs";
+        }
+        else{
+            cout<<"dfs < bfs";
+        }
+    }
+    cout<<endl;
+
+    cout<<endl<<endl;
+    cout<<"The time taken for creation of the maze: "<<maze_creation_duration<<endl;
+    cout<<"The time taken for completion of dfs_path: "<<dfs_duration<<endl;
+    cout<<"The time taken for completion of bfs_path: "<<bfs_duration<<endl;
+    cout<<"The time taken for completion of a*_path: "<<a_duration<<endl<<endl;
+
+    cout<<"The order of the number of time taken: ";
+    if(dfs_duration<bfs_duration && dfs_duration<a_duration){
+        cout<<"dfs < ";
+        if(bfs_duration<a_duration){
+            cout<<"bfs < a*";
+        }
+        else{
+            cout<<"a* < bfs";
+        }
+    }
+    if(bfs_duration<dfs_duration && bfs_duration<a_duration){
+        cout<<"bfs < ";
+        if(dfs_duration<a_duration){
+            cout<<"dfs < a*";
+        }
+        else{
+            cout<<"a* < dfs";
+        }
+    }
+    if(a_duration<bfs_duration && a_duration<dfs_duration){
+        cout<<"a* < ";
+        if(bfs_duration<dfs_duration){
+            cout<<"bfs < dfs";
+        }
+        else{
+            cout<<"dfs < bfs";
+        }
+    }
+    cout<<endl;
     return 0;
 }
